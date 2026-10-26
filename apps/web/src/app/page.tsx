@@ -267,6 +267,7 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
   // The public product is the social feed. Authentication protects writes, not reading.
   const isAuthenticated = Boolean(session?.user?.login);
   let feedUnavailable = false;
+  const feedCursor = new Date().toISOString();
 
   // ═══════════════════════════════════════════════════════════════════════
   // discover: user-created posts only. scored via algo.
@@ -378,7 +379,8 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
           userName={session?.user?.login ?? ""}
           userAvatar={session?.user?.image ?? ""}
           isAuthenticated={isAuthenticated}
-          feedUnavailable={feedUnavailable} />
+          feedUnavailable={feedUnavailable}
+          initialCursor={feedCursor} />
         
             </div>
             <Suspense fallback={<div className="hidden w-[300px] shrink-0 xl:block"><SidebarSkeleton /></div>}>

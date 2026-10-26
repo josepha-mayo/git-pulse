@@ -3,7 +3,8 @@
 export function mergeFeedPosts(incoming, existing, limit = 100) {
   const records = new Map();
   for (const post of [...incoming, ...existing]) {
-    if (post && typeof post.id === 'string' && post.id && !records.has(post.id)) records.set(post.id, post);
+    if (post && typeof post.id === "string" && post.id && !records.has(post.id))
+      records.set(post.id, post);
     if (records.size >= limit) break;
   }
   return [...records.values()];

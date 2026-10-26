@@ -436,7 +436,7 @@ const handleReact = async (emoji: string) => {
         {!isNested && (
         <div className="relative z-10 flex items-center gap-6 mt-1 w-full">
           <button
-            onClick={() => setShowComments(!showComments)}
+            onClick={() => currentUsername ? setShowComments(!showComments) : router.push(`/post/${post.id}`)}
             className={`flex items-center gap-1.5 text-git-muted hover:text-git-accent transition-colors group ${showComments ? 'text-git-accent' : ''}`}
             title="Comments">
             
