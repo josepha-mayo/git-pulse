@@ -159,7 +159,7 @@ export async function POST(req: Request) {
         repostOfId: repostOfId || null
       },
       include: {
-        author: true,
+        author: { select: { username: true, name: true, avatar: true, statusEmoji: true, statusText: true } },
         _count: { select: { comments: true, reactions: true } }
       }
     });

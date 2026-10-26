@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = ["/", "/explore", "/login", "/signout"];
+const PUBLIC_ROUTES = ["/", "/explore", "/post", "/login", "/signup", "/auth/error", "/signout"];
 
 function hasSessionCookie(req: NextRequest) {
   return Boolean(
@@ -19,7 +19,7 @@ export default function middleware(req: NextRequest) {
   }
 
   const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-    route === "/" ? pathname === "/" : pathname.startsWith(route)
+    pathname === route || (route !== "/" && pathname.startsWith(route + "/"))
   );
 
   if (isPublicRoute) {

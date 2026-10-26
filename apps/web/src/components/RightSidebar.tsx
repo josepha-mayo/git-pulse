@@ -122,28 +122,26 @@ export default async function RightSidebar() {
     : null;
 
   if (!token) {
-    return (
-      <aside className="hidden w-[350px] shrink-0 lg:block">
-        <div className="sticky top-0 pt-3 flex flex-col gap-4">
-          <div className="rounded-2xl border border-git-border bg-git-card p-5">
-            <h2 className="text-base font-bold text-git-text">Unlock GitHub insights</h2>
-            <p className="mt-2 text-sm text-git-muted">
-              Connect GitHub to see trending repos, developers like you, active projects, and personalized suggestions here.
-            </p>
-            <Link
-              href="/api/auth/signin/github?callbackUrl=/"
-              className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-git-green px-4 py-2 text-sm font-semibold text-white hover:bg-git-green-hover transition-colors"
-            >
-              Connect GitHub
-            </Link>
-          </div>
-        </div>
-      </aside>
-    );
+    return <aside aria-label="Community discovery" className="hidden min-w-0 xl:block p-5">
+      <div className="sticky top-5 space-y-5">
+        <section className="rounded-2xl border border-git-border bg-git-card/40 p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-300">Build in good company</p>
+          <h2 className="mt-3 text-lg font-semibold tracking-tight">Find your people.</h2>
+          <p className="mt-2 text-[13px] leading-relaxed text-git-muted">Follow the developers behind the projects. Share the process, not just the finished product.</p>
+          <Link href="/signup" className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-git-text px-4 py-2.5 text-xs font-bold text-git-bg hover:opacity-90">Create your account</Link>
+        </section>
+        <section className="rounded-2xl border border-git-border p-5">
+          <h2 className="text-sm font-semibold">Explore a topic</h2>
+          <div className="mt-4 space-y-4">{[{tag:"buildinpublic",description:"The work between releases"},{tag:"opensource",description:"Built together, shared openly"},{tag:"machinelearning",description:"Models, experiments, and lessons"},{tag:"webdev",description:"From first commit to shipped"}].map(({tag,description})=><Link key={tag} href={`/explore/tags/${tag}`} className="block group"><span className="text-[13px] font-medium text-git-text group-hover:text-emerald-300">#{tag}</span><span className="mt-0.5 block text-[11px] text-git-muted">{description}</span></Link>)}</div>
+        </section>
+        <div className="px-1"><h2 className="text-xs font-semibold">Small updates count.</h2><p className="mt-2 text-xs leading-relaxed text-git-muted">Ask a good question. Share a useful discovery. Give another builder thoughtful feedback.</p></div>
+        <p className="px-1 text-[10px] text-git-muted">gitPulse · Community, not a commit log.</p>
+      </div>
+    </aside>;
   }
 
   return (
-    <aside className="hidden w-[350px] shrink-0 lg:block">
+    <aside className="hidden w-[300px] shrink-0 xl:block px-4">
       <div className="sticky top-0 pt-3 flex flex-col gap-4">
         <Suspense fallback={<SidebarSkeleton />}>
           <TrendingSection token={token} />

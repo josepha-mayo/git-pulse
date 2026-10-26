@@ -8,7 +8,7 @@ export default function TopNav() {
   const router = useRouter();
   const pathname = usePathname();
 const ROUTE_CONFIGS = [
-  { path: '/', title: 'Home', matchType: 'exact' },
+  { path: '/', title: 'gitPulse', matchType: 'exact' },
   { path: '/profile', title: 'Profile', matchType: 'dynamicProfile' },
   { path: '/explore', title: 'Explore', matchType: 'startsWith' },
   { path: '/notifications', title: 'Notifications', matchType: 'startsWith' },

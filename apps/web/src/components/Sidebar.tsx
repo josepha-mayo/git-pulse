@@ -1,131 +1,17 @@
-import { auth, signOut } from "@/lib/auth";
+import {auth,signOut} from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
-import NotificationBell from "./NotificationBell";
-import { HomeIcon, PersonIcon, GearIcon, TelescopeIcon, PulseIcon } from "@primer/octicons-react";
-
+import {Activity,ArrowUpRight,Plus,LogOut} from "lucide-react";
+import FeedNavigation from "./FeedNavigation";
 export default async function Sidebar() {
-    let session = null;
-    try {
-        session = await auth();
-    } catch {
-        // auth() can fail during static generation
-    }
-
-    return (
-        <aside className="hidden w-[275px] shrink-0 xl:block relative">
-            <nav className="fixed w-[275px] top-0 flex flex-col h-screen px-4 pb-4">
-                {/* logo */}
-                <div className="py-5 min-h-[180px] flex items-center">
-                    <Link href="/" className="inline-flex items-center justify-center hover:opacity-80 transition-opacity overflow-visible">
-                        <Image
-                            src="/logo.png"
-                            alt="GitPulse"
-                            width={144}
-                            height={144}
-                            className="h-28 w-28 scale-110 origin-left rounded-2xl object-contain"
-                            priority
-                        />
-                    </Link>
-                </div>
-
-                {/* nav links — filled octicon svgs */}
-                <div className="flex flex-col gap-1 w-full mt-2">
-                    <Link href="/" className="group flex items-center w-fit">
-                        <div className="flex items-center gap-5 px-4 py-3 rounded-full hover:bg-git-hover transition-colors">
-                            <HomeIcon size={24} className="fill-current" />
-                            <span className="text-xl font-medium text-git-text">Home</span>
-                        </div>
-                    </Link>
-                    
-                    <Link href="/activity" className="group flex items-center w-fit">
-                        <div className="flex items-center gap-5 px-4 py-3 rounded-full hover:bg-git-hover transition-colors">
-                            <PulseIcon size={24} className="fill-current" />
-                            <span className="text-xl font-medium text-git-text">Activity</span>
-                        </div>
-                    </Link>
-                    
-                    {session?.user && (
-                        <div className="group flex items-center w-fit">
-                            <NotificationBell />
-                        </div>
-                    )}
-                    
-                    {session?.user?.login && (
-                        <Link href={`/profile/${session.user.login}`} className="group flex items-center w-fit">
-                            <div className="flex items-center gap-5 px-4 py-3 rounded-full hover:bg-git-hover transition-colors">
-                                <PersonIcon size={24} className="fill-current" />
-                                <span className="text-xl font-medium text-git-text">Profile</span>
-                            </div>
-                        </Link>
-                    )}
-                    
-                    <Link href="/explore" className="group flex items-center w-fit">
-                        <div className="flex items-center gap-5 px-4 py-3 rounded-full hover:bg-git-hover transition-colors">
-                            <TelescopeIcon size={24} className="fill-current" />
-                            <span className="text-xl font-medium text-git-text">Explore</span>
-                        </div>
-                    </Link>
-
-                    {session?.user && (
-                        <Link href="/settings" className="group flex items-center w-fit">
-                            <div className="flex items-center gap-5 px-4 py-3 rounded-full hover:bg-git-hover transition-colors">
-                                <GearIcon size={24} className="fill-current" />
-                                <span className="text-xl font-medium text-git-text">Settings</span>
-                            </div>
-                        </Link>
-                    )}
-                    
-                    {/* post button */}
-                    {session?.user && (
-                        <div className="mt-4 px-2 mb-2">
-                            <Link href="#top" className="w-[60%] lg:w-[120px] bg-git-green hover:bg-git-green-hover text-white rounded-full py-2 px-4 font-semibold text-sm shadow-sm transition-colors flex items-center justify-center">
-                                Post
-                            </Link>
-                        </div>
-                    )}
-                </div>
-
-                {/* user card pill */}
-                {session?.user && (
-                    <div className="mt-auto mb-2 relative group w-full pr-4">
-                        <div className="flex items-center justify-between p-3 rounded-full hover:bg-git-hover transition-colors cursor-pointer w-full mx-2">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <Image
-                                    src={session.user.image || "/default-avatar.svg"}
-                                    alt={session.user.login || "User"}
-                                    width={40}
-                                    height={40}
-                                    className="rounded-full flex-shrink-0"
-                                />
-                                <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="text-[15px] font-bold text-git-text truncate leading-tight">
-                                        {session.user.name || session.user.login}
-                                    </span>
-                                    <span className="text-[15px] text-git-muted truncate leading-tight">
-                                        @{session.user.login}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="text-git-text flex-shrink-0">
-                                <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" className="fill-current"><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"></path></svg>
-                            </div>
-                        </div>
-
-                        {/* sign out dropdown */}
-                        <div className="absolute bottom-full left-0 w-full pb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                            <form action={async () => {
-                                "use server";
-                                await signOut({ redirectTo: "/" });
-                            }}>
-                                <button type="submit" className="w-[85%] mx-auto block bg-git-bg border border-git-border shadow-[0_0_15px_rgba(255,255,255,0.1)] rounded-2xl px-4 py-3 text-left text-[15px] font-bold text-git-text hover:bg-git-card transition-colors">
-                                    Log out @{session.user.login}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                )}
-            </nav>
-        </aside>
-    );
+  const session=await auth().catch(()=>null);
+  const username=session?.user?.login;
+  return <aside className="w-[224px] shrink-0"><nav aria-label="Main navigation" className="sticky top-0 flex h-dvh flex-col px-4 py-7">
+    <Link href="/" aria-label="gitPulse home" className="mb-9 flex items-center gap-2.5 px-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400 text-[#07130d]"><Activity size={23} strokeWidth={2.2}/></span><span className="text-[23px] font-bold tracking-[-1px]">git<span className="font-medium text-git-muted">Pulse</span></span></Link>
+    <p className="mb-3 px-3.5 text-[10px] font-semibold uppercase tracking-[.2em] text-git-muted">Your community</p>
+    <FeedNavigation username={username}/>
+    <Link href={username?"/#compose":"/signup"} className="mt-7 flex items-center justify-center gap-2 rounded-full bg-emerald-400 px-4 py-3 text-[13px] font-bold text-[#07130d] transition hover:bg-emerald-300"><Plus size={17}/>{username?"Share an update":"Start building in public"}</Link>
+    <div className="mt-8 rounded-xl border border-git-border px-4 py-4"><span className="text-[10px] font-semibold uppercase tracking-[.16em] text-emerald-300">Made for builders</span><p className="mt-2 text-xs leading-relaxed text-git-muted">Less noise. More work worth sharing.</p><a href="https://github.com/josepha-mayo/git-pulse" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-git-text">Open source<ArrowUpRight size={13}/></a></div>
+    <div className="mt-auto pt-7">{username?<div className="border-t border-git-border pt-4"><Link href={`/profile/${encodeURIComponent(username)}`} className="flex min-w-0 items-center gap-2.5"><Image src={session?.user?.image || "/default-avatar.svg"} alt="" width={34} height={34} className="rounded-full"/><div className="min-w-0"><p className="truncate text-xs font-semibold">{session?.user?.name || username}</p><p className="truncate text-[11px] text-git-muted">@{username}</p></div></Link><form className="mt-3" action={async()=>{"use server";await signOut({redirectTo:"/"});}}><button className="inline-flex items-center gap-2 text-xs text-git-muted hover:text-git-text" type="submit"><LogOut size={13}/>Sign out</button></form></div>:<div className="border-t border-git-border pt-4"><p className="text-xs text-git-muted">Already part of the community?</p><Link href="/login" className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-git-text">Sign in<ArrowUpRight size={14}/></Link></div>}<p className="mt-5 text-[10px] text-git-muted">gitPulse / open source, open conversation.</p></div>
+  </nav></aside>;
 }

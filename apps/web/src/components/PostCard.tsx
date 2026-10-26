@@ -145,6 +145,7 @@ const handleNavigate = (e: React.MouseEvent) => {
 const handleRepost = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!currentUsername) { router.push("/login"); return; }
     if (isReposting) return;
     
     setIsReposting(true);
@@ -175,6 +176,7 @@ const handleRepost = async (e: React.MouseEvent) => {
   };
 
 const handleReact = async (emoji: string) => {
+    if (!currentUsername) { router.push("/login"); return; }
     try {
       const res = await fetch(`/api/posts/${post.id}/reactions`, {
         method: 'POST',
@@ -453,7 +455,7 @@ const handleReact = async (emoji: string) => {
             
             <div className="relative flex items-center" data-repost-menu>
               <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowRepostMenu(!showRepostMenu); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!currentUsername) { router.push("/login"); return; } setShowRepostMenu(!showRepostMenu); }}
                 disabled={isReposting}
                 className={`flex items-center gap-1.5 text-git-muted transition-colors group ${isReposting ? 'opacity-50' : 'hover:text-git-success'}`}
                 title="Repost menu">

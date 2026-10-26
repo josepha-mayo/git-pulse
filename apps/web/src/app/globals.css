@@ -300,3 +300,12 @@ body {
   border-top: 1px solid var(--border);
   margin: 1.5em 0;
 }
+
+/* Feed-first shell: readable cards, visible keyboard focus, reduced-motion support. */
+.feed-tabs { background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(16px); }
+.social-post-list > article, .social-post-list > div { overflow-wrap: anywhere; }
+:focus-visible { outline: 2px solid #6ee7b7; outline-offset: 4px; }
+.skip-link { position: fixed; top: 8px; left: 12px; z-index: 100; padding: 10px 16px; background: #6ee7b7; color: #07130d; border-radius: 8px; transform: translateY(-160%); }
+.skip-link:focus { transform: translateY(0); }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }

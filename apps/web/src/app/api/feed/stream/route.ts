@@ -1,113 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from '@/lib/auth';
+import { auth } from "@/lib/auth";
+import { parseFeedCursor } from "@/lib/feed-state.mjs";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+const publicAuthor = { username: true, name: true, avatar: true, githubId: true, statusEmoji: true, statusText: true } as const;
+const counts = { select: { comments: true, reactions: true } } as const;
+const postInclude = { author: { select: publicAuthor }, _count: counts,
+  repostOf: { include: { author: { select: publicAuthor }, _count: counts,
+    repostOf: { include: { author: { select: publicAuthor }, _count: counts } } } } } as const;
+type PostRecord = Prisma.PostGetPayload<{ include: typeof postInclude }>;
+type DisplayRecord = Omit<PostRecord, "repostOf"> & { repostOf?: DisplayRecord | null };
+
+function serialize(post: DisplayRecord, depth = 0): Record<string, unknown> {
+  const authorName = post.author.username ?? post.author.name ?? "developer";
+  const original = post.repostOf;
+  const plainRepost = Boolean(original && post.content.startsWith("Reposted by @"));
+  if (plainRepost && original && depth < 2) {
+    return { ...serialize(original, depth + 1), isRepost: true, repostedBy: authorName };
+  }
+  return {
+    id: post.id, type: post.type, content: post.content,
+    author: { username: authorName, avatar: post.author.avatar || (post.author.githubId ? `https://avatars.githubusercontent.com/u/${post.author.githubId}?v=4` : "/default-avatar.svg"), statusEmoji: post.author.statusEmoji, statusText: post.author.statusText },
+    timestamp: post.createdAt.toISOString(), likes: post._count.reactions, comments: post._count.comments,
+    images: post.images, hashtags: post.hashtags, repoUrl: post.repoUrl,
+    repoEmbed: post.repoEmbed, shipDetails: post.shipDetails,
+    ...(original && depth < 2 ? { quotedPost: serialize(original, depth + 1) } : {}),
+  };
+}
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.login) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const currentUsername = session.user.login;
-  const { searchParams } = new URL(req.url);
-  const since = searchParams.get('since');
-  
-  const lastCheckedTime = since ? new Date(since) : new Date(Date.now() - 5000);
-
+  if (!session?.user?.login) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cutoff = new Date();
+  const since = parseFeedCursor(req.nextUrl.searchParams.get("since"), cutoff);
+  const after = req.nextUrl.searchParams.get("after");
+  if (!since || (after && !/^[a-zA-Z0-9_-]{1,128}$/.test(after))) return NextResponse.json({ error: "Invalid feed cursor" }, { status: 400 });
   try {
-    // fetch the current user's following list to filter the feed
     const currentUser = await prisma.user.findUnique({
-      where: { username: currentUsername },
-      select: {
-        following: { select: { followingId: true } }
-      }
+      where: session.user.id ? { id: session.user.id } : { username: session.user.login },
+      select: { id: true, following: { select: { followingId: true } } },
     });
-    const followingIds = currentUser?.following.map((f) => f.followingId) || [];
-
-    const whereClause: any = {
-      createdAt: { gt: lastCheckedTime }
-    };
-
-    // if the user follows anyone, filter to only those authors
-    if (followingIds.length > 0) {
-      whereClause.authorId = { in: followingIds };
-    }
-
-    const newPosts = await prisma.post.findMany({
-      where: whereClause,
-      include: {
-        author: { select: { username: true, githubId: true } },
-        reactions: true,
-        repostOf: { 
-          include: { 
-            author: { select: { username: true, githubId: true } }, 
-            reactions: true,
-            repostOf: {
-              include: {
-                author: { select: { username: true, githubId: true } },
-                reactions: true
-              }
-            }
-          } 
-        }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 20
+    if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 401 });
+    const followingIds = new Set([currentUser.id, ...currentUser.following.map(follow => f.followingId)]);
+    // Read the public community stream, not just follows. A separate id list updates Following.
+    // Ascending composite pagination prevents gaps when a busy window contains over 100 posts.
+    const records = await prisma.post.findMany({
+      where: { createdAt: { lte: cutoff }, OR: [
+        { createdAt: { gt: since } },
+        { createdAt: since, ...(after ? { id: { gt: after } } : {}) },
+      ] },
+      include: postInclude, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: 101,
     });
-
-    const posts = newPosts.map(post => {
-      const isQuote = post.content !== `Reposted by @${post.author.username}`;
-      
-      let quotedPost = undefined;
-      if (post.repostOf && isQuote) {
-        quotedPost = {
-          id: post.repostOf.id,
-          type: post.repostOf.type,
-          author: {
-            username: post.repostOf.author.username,
-            avatar: `https://avatars.githubusercontent.com/u/${post.repostOf.author.githubId}?v=4`
-          },
-          content: post.repostOf.content,
-          timestamp: post.repostOf.createdAt.toISOString(),
-          likes: post.repostOf.reactions.length,
-          comments: 0,
-          reactions: post.repostOf.reactions,
-          images: post.repostOf.images,
-          repoUrl: post.repostOf.repoUrl,
-          repoEmbed: post.repostOf.repoEmbed,
-          score: 0,
-          passedBadge: false
-        };
-      }
-
-      return {
-        id: post.id,
-        type: post.type,
-        author: {
-          username: post.author.username,
-          avatar: `https://avatars.githubusercontent.com/u/${post.author.githubId}?v=4`
-        },
-        content: post.content,
-        timestamp: post.createdAt.toISOString(),
-        likes: post.reactions.length,
-        comments: 0,
-        reactions: post.reactions,
-        images: post.images,
-        repoUrl: post.repoUrl,
-        repoEmbed: post.repoEmbed,
-        score: 0,
-        passedBadge: false,
-        quotedPost,
-        isRepost: post.repostOf && !isQuote ? true : undefined,
-        repostedBy: post.repostOf && !isQuote ? post.author.username : undefined
-      };
-    });
-
-    return NextResponse.json({ posts, timestamp: new Date().toISOString() });
+    const hasMore = records.length > 100;
+    const page = records.slice(0, 100);
+    const last = page[page.length - 1];
+    const serialized = page.map(record => ({ record, display: serialize(record as DisplayRecord) }));
+    return NextResponse.json({
+      posts: serialized.map(entry => entry.display).reverse(),
+      followingPostIds: serialized.filter(entry => followingIds.has(entry.record.authorId)).map(entry => entry.display.id),
+      timestamp: hasMore && last ? last.createdAt.toISOString() : cutoff.toISOString(),
+      cursorId: hasMore && last ? last.id : null,
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
-    console.error("Feed poll error:", error);
-    return NextResponse.json({ posts: [], timestamp: new Date().toISOString() });
+    console.error("[Feed] Update failed:", error);
+    return NextResponse.json({ error: "Feed temporarily unavailable" }, { status: 503 });
   }
 }

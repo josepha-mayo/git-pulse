@@ -6,11 +6,11 @@ import FeedClient from "@/components/FeedClient";
 import { type PostProps } from "@/components/PostCard";
 import { calculatePostScore } from "@/lib/algo";
 import { hasPassedBadge } from "@/lib/badges";
-import { getRelativeTime } from "@/lib/utils";
+
 import RightSidebar from "@/components/RightSidebar";
 import { Suspense } from "react";
 import { SidebarSkeleton } from "@/components/Skeletons";
-import WelcomeHero from "@/components/WelcomeHero";
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -161,7 +161,7 @@ function mapPrismaPostToProps(p: {
   _count: {comments: number;reactions: number;};
   repostOf?: any;
 }): PostProps {
-  const authorUsername = p.author.name ?? p.author.username ?? p.author.email?.split("@")[0] ?? "unknown";
+  const authorUsername = p.author.username ?? p.author.name ?? "developer";
 
   if (p.repostOf) {
     const isQuoteRepost = !p.content.startsWith("Reposted by @");
@@ -264,16 +264,15 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
     return null;
   });
 
-  // unauthenticated users get the welcome landing page
-  if (!session?.user?.login) {
-    return <WelcomeHero />;
-  }
+  // The public product is the social feed. Authentication protects writes, not reading.
+  const isAuthenticated = Boolean(session?.user?.login);
+  let feedUnavailable = false;
 
   // ═══════════════════════════════════════════════════════════════════════
   // discover: user-created posts only. scored via algo.
   // ═══════════════════════════════════════════════════════════════════════
   let discoverPosts: PostProps[] = [];
-  if (session?.user?.login) {
+  {
     try {
       const posts = await prisma.post.findMany({
         include: {
@@ -299,6 +298,7 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
       const deduped = mergeRepostHeaders(mapped);
       discoverPosts = deduped.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 30);
     } catch (error) {
+      feedUnavailable = true;
       console.error("[HomePage] Failed to load discover posts:", error);
     }
   }
@@ -369,17 +369,19 @@ export default async function HomePage(props: { searchParams?: Promise<Record<st
   }
 
   return (
-    <div className="flex flex-col lg:flex-row w-full">
-            <div className="flex-1 w-full lg:max-w-[600px] min-h-screen lg:border-r lg:border-git-border lg:pr-2">
+    <div className="grid w-full min-w-0 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="min-w-0 w-full min-h-screen xl:border-r border-git-border">
                 <FeedClient
           discoverPosts={discoverPosts}
           followingPosts={followingPosts}
           activityPosts={activityPosts}
           userName={session?.user?.login ?? ""}
-          userAvatar={session?.user?.image ?? ""} />
+          userAvatar={session?.user?.image ?? ""}
+          isAuthenticated={isAuthenticated}
+          feedUnavailable={feedUnavailable} />
         
             </div>
-            <Suspense fallback={<div className="hidden w-[350px] shrink-0 lg:block"><SidebarSkeleton /></div>}>
+            <Suspense fallback={<div className="hidden w-[300px] shrink-0 xl:block"><SidebarSkeleton /></div>}>
                 <RightSidebar />
             </Suspense>
         </div>);

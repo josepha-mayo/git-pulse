@@ -147,7 +147,7 @@ const dbComments = await prisma.comment.findMany({
 
       {/* comment section */}
       <div className="px-4 py-4">
-        <CommentSection postId={post.id} initialComments={initialComments} />
+        {session?.user?.login ? <CommentSection postId={post.id} initialComments={initialComments} /> : <div><h2 className="text-sm font-semibold mb-4">Conversation</h2>{initialComments.map((comment: {id:string;content:string;author:{username:string}})=><div key={comment.id} className="border-b border-git-border py-4"><p className="text-xs font-semibold mb-2">@{comment.author.username}</p><p className="text-sm text-git-muted whitespace-pre-wrap">{comment.content}</p></div>)}<Link href="/login" className="inline-block mt-5 text-sm font-semibold text-emerald-300">Sign in to join the conversation</Link></div>}
       </div>
     </div>
   );

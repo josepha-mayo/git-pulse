@@ -39,7 +39,7 @@ const navItems = [
         { name: "Home", href: "/", Icon: HomeIcon },
         { name: "Discover", href: "/explore", Icon: DiscoverIcon },
         { name: "Activity", href: "/activity", Icon: ActivityIcon },
-        { name: "Notifications", href: "/notifications", Icon: BellIcon },
+        ...(username ? [{ name: "Notifications", href: "/notifications", Icon: BellIcon }] : [{ name: "Sign in", href: "/login", Icon: UserIcon }]),
         ...(username ? [{ name: "Profile", href: `/profile/${encodeURIComponent(username)}`, Icon: UserIcon }] : []),
       ];
 

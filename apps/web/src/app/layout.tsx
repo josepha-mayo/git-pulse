@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
-import TopNav from "@/components/TopNav";
+import AppShell from "@/components/AppShell";
 import ThemeProvider from "@/components/ThemeProvider";
 import { SidebarSkeleton } from "@/components/Skeletons";
 import "./globals.css";
@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 
 
 export const metadata: Metadata = {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://gitpulsefeed.vercel.app"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://hubfeed.netlify.app"),
     title: {
         default: "GitPulse | GitHub's Social Layer",
         template: "%s | GitPulse",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: "GitPulse",
         description: "GitHub's Social Layer",
-        url: "https://gitpulsefeed.vercel.app",
+        url: "https://hubfeed.netlify.app",
         siteName: "GitPulse",
         images: [
             {
@@ -67,38 +67,15 @@ export default async function RootLayout({
         return null;
     });
 
-    const isSignedIn = Boolean(session?.user?.login);
+
 
     return (
         <html lang="en" data-theme="github">
             <body className="antialiased min-h-screen bg-git-bg text-git-text overflow-x-hidden font-sans">
                 <ThemeProvider>
-                    {isSignedIn ? (
-                        <>
-                            <div className="mx-auto w-full max-w-[1300px] pb-20 lg:pb-0">
-                                <div className="flex justify-center w-full">
-                                    {/* left nav — async, wrapped in suspense */}
-                                    <Suspense fallback={<div className="hidden w-[275px] shrink-0 xl:block"><SidebarSkeleton /></div>}>
-                                        <Sidebar />
-                                    </Suspense>
-
-                                    {/* main content area — pages dictate their own width and right sidebars */}
-                                    <main className="flex-1 min-w-0 border-x border-git-border">
-                                        <TopNav />
-                                        {children}
-                                    </main>
-                                </div>
-                            </div>
-
-                            {/* mobile bottom navigation */}
-                            <BottomNav username={session?.user?.login} />
-                        </>
-                    ) : (
-                        /* unauthenticated: clean full-viewport canvas for welcome page */
-                        <main className="w-full">
-                            {children}
-                        </main>
-                    )}
+                    <AppShell sidebar={<Suspense fallback={<div className="w-[224px]"><SidebarSkeleton /></div>}><Sidebar /></Suspense>} bottomNav={<BottomNav username={session?.user?.login} />}>
+                        {children}
+                    </AppShell>
                 </ThemeProvider>
             </body>
         </html>
