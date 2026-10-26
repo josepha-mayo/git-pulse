@@ -19,7 +19,8 @@ const nextConfig: NextConfig = {
         formats: ['image/avif', 'image/webp'],
         minimumCacheTTL: 60,
     },
-    output: 'standalone',
+    // Netlify uses standalone output. Windows QA may use the regular server.
+    output: process.env.GITPULSE_STANDALONE === '0' ? undefined : 'standalone',
     compress: true,
     poweredByHeader: false,
     reactStrictMode: true,

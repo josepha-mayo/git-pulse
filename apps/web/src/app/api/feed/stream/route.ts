@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       select: { id: true, following: { select: { followingId: true } } },
     });
     if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 401 });
-    const followingIds = new Set([currentUser.id, ...currentUser.following.map(follow => f.followingId)]);
+    const followingIds = new Set([currentUser.id, ...currentUser.following.map(follow => follow.followingId)]);
     // Read the public community stream, not just follows. A separate id list updates Following.
     // Ascending composite pagination prevents gaps when a busy window contains over 100 posts.
     const records = await prisma.post.findMany({
